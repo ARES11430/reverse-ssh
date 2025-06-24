@@ -114,7 +114,18 @@ systemctl enable --now "$SERVICE_NAME"
 echo "[✓] Reverse SSH tunnel is set up and running:"
 systemctl status "$SERVICE_NAME" --no-pager
 
-# Final info
 echo ""
 echo "✅ You can manually connect using:"
 echo "    ssh $HOST_ALIAS"
+
+# Add cronjob to restart the tunnel every 30 minutes
+CRON_MARK="# Reverse SSH Auto-Restart for $SERVICE_NAME"
+CRON_CMD="*/30 * * * * systemctl restart $SERVICE_NAME $CRON_MARK"
+
+# Remove existing job (if present)
+(crontab -l 2>/dev/null | grep -v "$CRON_MARK") | crontab -
+
+# Add new job
+(crontab -l 2>/dev/null; echo "$CRON_CMD") | crontab -
+
+echo "[✓] Cronjob added: will restart $SERVICE_NAME every 30 minutes"

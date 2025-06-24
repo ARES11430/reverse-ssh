@@ -60,6 +60,32 @@ fi
 echo "[+] Copying SSH key to $DEST_IP..."
 sshpass -p "$SSH_PASS" ssh-copy-id -i "${KEY_FILE}.pub" -p "$SSH_PORT" -o StrictHostKeyChecking=no root@"$DEST_IP"
 
+# Create SSH config for easier manual access
+CONFIG_FILE="/root/.ssh/config"
+HOST_ALIAS="iran-server-$REMOTE_PORT"
+
+echo "[+] Updating SSH config at $CONFIG_FILE..."
+
+mkdir -p /root/.ssh
+touch "$CONFIG_FILE"
+chmod 600 "$CONFIG_FILE"
+
+# Remove any previous config block for this host alias
+sed -i "/^Host $HOST_ALIAS\$/,/^Host /{/^Host /!d}" "$CONFIG_FILE"
+sed -i "/^Host $HOST_ALIAS\$/d" "$CONFIG_FILE"
+
+{
+  echo "Host $HOST_ALIAS"
+  echo "    HostName $DEST_IP"
+  echo "    Port $SSH_PORT"
+  echo "    User root"
+  echo "    IdentityFile $KEY_FILE"
+  if [[ "$USE_SECOND_IP" =~ ^[Yy]$ ]]; then
+    echo "    BindAddress $BIND_IP"
+  fi
+  echo ""
+} >> "$CONFIG_FILE"
+
 # Create systemd service
 echo "[+] Creating systemd service at $SERVICE_FILE..."
 
@@ -87,3 +113,8 @@ systemctl enable --now "$SERVICE_NAME"
 # Show status
 echo "[✓] Reverse SSH tunnel is set up and running:"
 systemctl status "$SERVICE_NAME" --no-pager
+
+# Final info
+echo ""
+echo "✅ You can manually connect using:"
+echo "    ssh $HOST_ALIAS"

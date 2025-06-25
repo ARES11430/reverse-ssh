@@ -120,7 +120,7 @@ echo "    ssh $HOST_ALIAS"
 
 # Add cronjob to restart the tunnel every 30 minutes
 CRON_MARK="# Reverse SSH Auto-Restart for $SERVICE_NAME"
-CRON_CMD="*/30 * * * * systemctl restart $SERVICE_NAME $CRON_MARK"
+CRON_CMD="*/10 * * * * systemctl restart $SERVICE_NAME $CRON_MARK"
 
 # Remove existing job (if present)
 (crontab -l 2>/dev/null | grep -v "$CRON_MARK") | crontab -
